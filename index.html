@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字展览空间 - Digital Exhibition Space</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        
+        #info h2 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        
+        #info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        #info li {
+            margin: 5px 0;
+        }
+        
+        #info kbd {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        /* 十字光标样式 */
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 9999;
+            display: none; /* 初始隐藏，指针锁定后显示 */
+        }
+        
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+        }
+        
+        #crosshair::before {
+            width: 2px;
+            height: 20px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        #crosshair::after {
+            width: 20px;
+            height: 2px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="crosshair"></div>
+    <div id="info">
+        <h2>数字展览空间</h2>
+        <h3>相机控制</h3>
+        <ul>
+            <li><kbd>W/A/S/D</kbd> - 移动</li>
+            <li><kbd>鼠标</kbd> - 视角控制</li>
+            <li><kbd>空格</kbd> - 上升</li>
+            <li><kbd>Shift</kbd> - 下降</li>
+            <li><kbd>R</kbd> - 重置相机</li>
+            <li><kbd>1</kbd> - 拾取/放回物体</li>
+        </ul>
+        <h3>展示柜控制</h3>
+        <ul>
+            <li><kbd>←</kbd> - 左旋转</li>
+            <li><kbd>→</kbd> - 右旋转</li>
+            <li><kbd>↑</kbd> - 向上旋转</li>
+            <li><kbd>↓</kbd> - 向下旋转</li>
+            <li><kbd>J</kbd> - 基座高度升高</li>
+            <li><kbd>K</kbd> - 基座高度降低</li>
+        </ul>
+        <h3>指针锁定</h3>
+        <ul>
+            <li>点击画布进入指针锁定模式</li>
+            <li>屏幕中心显示十字光标</li>
+            <li><kbd>Q</kbd> 或 <kbd>ESC</kbd> - 退出指针锁定</li>
+        </ul>
+        <h3>拾取功能</h3>
+        <ul>
+            <li>按 <kbd>1</kbd> 拾取展示柜内的物体</li>
+            <li>再次按 <kbd>1</kbd> 放回原处</li>
+        </ul>
+    </div>
+    
+    <!-- 使用多个CDN源作为备用 -->
+    <script>
+        // 尝试加载Three.js，如果失败则使用备用源
+        function loadThreeJS() {
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/three@0.144.0/build/three.min.js',
+                'https://unpkg.com/three@0.144.0/build/three.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/three.js/r144/three.min.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function tryLoadScript() {
+                if (currentIndex >= scripts.length) {
+                    console.error('无法加载Three.js库，请检查网络连接');
+                    document.body.innerHTML = '<div style="color: white; padding: 20px; text-align: center;"><h2>无法加载Three.js库</h2><p>请检查网络连接并刷新页面重试</p></div>';
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = scripts[currentIndex];
+                script.crossOrigin = 'anonymous';
+                
+                script.onload = function() {
+                    console.log('Three.js加载成功，来源:', scripts[currentIndex]);
+                    // Three.js加载成功后，加载GLTFLoader
+                    loadGLTFLoader();
+                };
+                
+                script.onerror = function() {
+                    console.warn('加载失败，尝试下一个源:', scripts[currentIndex]);
+                    currentIndex++;
+                    tryLoadScript();
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            // 加载GLTFLoader
+            function loadGLTFLoader() {
+                const loaderSources = [
+                    'https://threejs.org/examples/js/loaders/GLTFLoader.js',
+                    'https://cdn.jsdelivr.net/npm/three@0.144.0/examples/js/loaders/GLTFLoader.js',
+                    'https://unpkg.com/three@0.144.0/examples/js/loaders/GLTFLoader.js'
+                ];
+                
+                let loaderIndex = 0;
+                
+                function tryLoadLoader() {
+                    if (loaderIndex >= loaderSources.length) {
+                        console.warn('无法加载GLTFLoader，GLB文件加载功能将不可用');
+                        // 即使GLTFLoader加载失败，也继续加载主程序
+                        const mainScript = document.createElement('script');
+                        mainScript.src = 'js/exhibition.js';
+                        document.body.appendChild(mainScript);
+                        return;
+                    }
+                    
+                    const loaderScript = document.createElement('script');
+                    loaderScript.src = loaderSources[loaderIndex];
+                    loaderScript.crossOrigin = 'anonymous';
+                    
+                    loaderScript.onload = function() {
+                        console.log('GLTFLoader加载成功，来源:', loaderSources[loaderIndex]);
+                        // GLTFLoader加载成功后，加载主程序
+                        const mainScript = document.createElement('script');
+                        mainScript.src = 'js/exhibition.js';
+                        document.body.appendChild(mainScript);
+                    };
+                    
+                    loaderScript.onerror = function() {
+                        console.warn('GLTFLoader加载失败，尝试下一个源:', loaderSources[loaderIndex]);
+                        loaderIndex++;
+                        tryLoadLoader();
+                    };
+                    
+                    document.head.appendChild(loaderScript);
+                }
+                
+                tryLoadLoader();
+            }
+            
+            tryLoadScript();
+        }
+        
+        // 页面加载完成后加载Three.js
+        window.addEventListener('DOMContentLoaded', loadThreeJS);
+    </script>
+</body>
+</html>
+
