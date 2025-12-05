@@ -2,6 +2,8 @@
 
 A complete 3D digital exhibition space application that allows users to import, display, and manipulate 3D models in a virtual environment. The project includes a beautiful display case, supports GLB format 3D model import, and provides rich interactive features such as model scaling, rotation, and pedestal height adjustment.
 
+<img width="3090" height="1736" alt="image" src="https://github.com/user-attachments/assets/f31f24a3-71cb-43dd-b651-63d41c9e2485" />
+
 ## 🚀 Quick Start
 
 **Simply double-click `index.html` to run the project - no configuration needed!**
@@ -250,3 +252,4 @@ The project supports **directly double-clicking `index.html` file** - no server 
 ---
 
 **Enjoy your digital exhibition journey!** 🎨✨
+
