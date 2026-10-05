@@ -255,3 +255,6 @@ DigitalExhibition/
 
 **享受您的数字展览之旅！** 🎨✨
 
+## Personal portfolio / 个人主页
+
+[谢秋实 / Qiushi Xie · 中文主页](https://qiushi0919.cn/) · [English portfolio](https://qiushi0919.github.io/)

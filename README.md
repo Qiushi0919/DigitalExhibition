@@ -253,3 +253,6 @@ The project supports **directly double-clicking `index.html` file** - no server 
 
 **Enjoy your digital exhibition journey!** 🎨✨
 
+## Personal portfolio / 个人主页
+
+[谢秋实 / Qiushi Xie · 中文主页](https://qiushi0919.cn/) · [English portfolio](https://qiushi0919.github.io/)
